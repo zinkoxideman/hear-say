@@ -1,6 +1,7 @@
 from oocsi import OOCSI
 import time
 from numpy import matrix, dot
+from recognise import interpretAudio
 
 #change the following line to get a handle automatically
 oocsi = OOCSI('hearSayServer', 'oocsi.id.tue.nl')

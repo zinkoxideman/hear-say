@@ -28,7 +28,7 @@ class Buzzer():
         self.pin = Pin(pin, Pin.OUT)
         self.volume = volume
         
-    def received(self):
+    def play_received(self):
         #play a specific rythm to alert the user of a new message
         buzzerPin = PWM(self.pin)
         buzzerPin.duty(self.volume)
@@ -77,7 +77,7 @@ oocsi = OOCSI('ThisVeryUniqueHandleAndSuch', 'oocsi.id.tue.nl')
 
 def receiveEvent(sender, recipient, event):
     print('received ', event, ' from ', sender) #print the received message
-
+    buzzer.play_received()
     light.applyColor(event['color'])
 
 oocsi.subscribe('hearSayChannel', receiveEvent)
