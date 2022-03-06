@@ -48,11 +48,15 @@ class Buzzer():
 class Microphone():
     def __init__(self, pin = 32):
         self.microphone = ADC(Pin(pin))
+        # adc1_config_width(ADC_WIDTH_BIT_12)
+        # adc1_config_channel_atten(ADC1_CHANNEL_7, ADC_ATTEN_DB_11)
     
     #record one chunk of audio from the microphone
-    def readChunk(self, chunkSize = 4096):
-        #do the recording
-        audioChunk = "This sthill needs to be defined"
+    #we can reliable send about 2000 samples per chunk and still have a reliable connection
+    def readChunk(self, chunkSize = 1000):
+        audioChunk = []
+        for i in range(chunkSize):
+            audioChunk.append(self.microphone.read_u16())
         return audioChunk
 
 class Ldr():
@@ -83,9 +87,28 @@ def receiveEvent(sender, recipient, event):
 oocsi.subscribe('hearSayChannel', receiveEvent)
 
 # keep the program running, can be quit with CTRL-C
+counter = 0
+muted = False
 while True:
     sleep(1)
-    if ldr.checkStatus():
-        print("lifted")
-    else:
-        print(".")
+    # if ldr.checkStatus():
+    #     if not muted:
+    #         print("lifted")
+    #         counter+=1
+    #         if counter > 10:
+                # counter = 0
+    #             muted = True
+    counter+=1
+    if counter>10:
+        counter = 0
+        muted = True
+    message = {}
+    message['chunk'] = microphone.readChunk()
+    message['flag'] = muted
+    oocsi.send('hearSayServer', message)
+    print('.')
+
+    muted = False
+    # else:
+    #     print(".")
+    #     muted = False
