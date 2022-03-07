@@ -90,7 +90,7 @@ oocsi.subscribe('hearSayChannel', receiveEvent)
 counter = 0
 muted = False
 while True:
-    sleep(1)
+    sleep(5)
     # if ldr.checkStatus():
     #     if not muted:
     #         print("lifted")
@@ -99,11 +99,11 @@ while True:
                 # counter = 0
     #             muted = True
     counter+=1
-    if counter>10:
+    if counter>2:
         counter = 0
         muted = True
     message = {}
-    message['chunk'] = microphone.readChunk()
+    message['chunk'] = microphone.readChunk(20)
     message['flag'] = muted
     oocsi.send('hearSayServer', message)
     print('.')

@@ -5,29 +5,6 @@ import time
 from numpy import matrix, dot
 from process import interpretAudio
 
-
-
-class Recordings():
-    def __init__(self):
-        self.chunks = {}
-
-    def process(self, chunk, sender, marker):
-        self.addChunk(chunk, sender)
-        if marker:
-            emotion = interpretAudio(self.chunks[sender])
-            self.delRecord(sender)
-            return emotion
-        return NULL
-
-    def addChunk(self, chunk, sender):
-        if sender in self.chunks.keys:
-            self.chunks[sender] += chunk
-        else:
-            self.chunks[sender] = chunk
-
-    def delRecord(self, sender):
-        self.chunks.pop(sender)
-
 class Emotions():
     def __init__(self):
         self.database = []
@@ -82,23 +59,48 @@ class Emotions():
         
         #normalize the blended emotions
         self.blend =  [emotion/sum(emotions) for emotion in emotions]
+    
+#creating the emotion object
+emotions = Emotions()
 
+class Recordings():
+    def __init__(self):
+        self.chunks = {}
+
+    def process(self, chunk, sender, marker):
+        self.addChunk(chunk, sender)
+        if marker == True:
+            print("has been flagged")
+            emotion = interpretAudio(self.chunks[sender])
+            print(emotion)
+            self.delRecord(sender)
+            emotions.add(emotion, sender)
+            message = {}
+            message['color'] = emotions.getColor(emotions.getBlend())
+            oocsi.send('hearSayChannel', message)
+            print(message)
+
+    def addChunk(self, chunk, sender):
+        if sender in self.chunks:
+            self.chunks[sender] += chunk
+            print(self.chunks)
+        else:
+            self.chunks[sender] = chunk
+        return NULL
+
+    def delRecord(self, sender):
+        self.chunks.pop(sender)
+
+# creating the recordings object
+recordings = Recordings()
 
 def handleMessage(sender, recipient, event):
     print(sender, "-->", recipient)
     print('message contains', len(event['chunk']), 'samples')
-    print('flag', event['flag'], '\n')
-    recordingEmotion = recordings.process(event['chunk'], sender, event['flag'])
-    if recordingEmotion: #check if all the chunks have been received
-        emotions.add(recordingEmotion, sender)
-        message = {}
-        message['color'] = emotions.getColor(emotions.getBlend())
-        oocsi.send('hearSayChannel', message)
-        print(message)
-
-#creating the emotion and recording objects
-emotions = Emotions()
-recordings = Recordings()
+    print('flag', event['flag'])
+    recordings.process(event['chunk'], sender, event['flag'])
+    print('\n')
+        
 
 #initializing the oocsi connection
 #change the following line to get a handle automatically

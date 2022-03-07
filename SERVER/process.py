@@ -10,19 +10,13 @@ from tensorflow.keras import layers
 from tensorflow.keras import models
 from IPython import display
 
-from tkinter import Tk
-from tkinter.filedialog import askopenfilename
-
+import matplotlib.pyplot as plot 
+import random 
+import numpy as np 
 emotions = ['angry', 'anxious', 'apologetic', 'assertive', 'concerned', 'encouraging', 'excited', 'happy', 'neutral', 'sad']
 
-def decode_audio(file_path):    
-    audio_binary = tf.io.read_file(file_path)
-    # Decode WAV-encoded audio files to `float32` tensors, normalized
-    # to the [-1.0, 1.0] range. Return `float32` audio and a sample rate.
-    audio, _ = tf.audio.decode_wav(contents=audio_binary)
-    # Since all the data is single channel (mono), drop the `channels`
-    # axis from the array.
-    return tf.squeeze(audio, axis=-1)
+def decode_audio(audioData):    
+    return 
 
 
 def get_spectrogram(waveform):
@@ -44,10 +38,14 @@ def get_spectrogram(waveform):
 
     return spectrogram 
 
-def interpretAudio():
-    sample_file = 'J A Z Z.wav'
 
-    model = tf.keras.models.load_model('model')
+def interpretAudio(audioData):
+    print("hoi")
 
-    prediction = model(get_spectrogram(decode_audio(sample_file)))
-    tf.nn.softmax(prediction[0])
+    # model = tf.keras.models.load_model('model')
+    # print(model)
+    print(get_spectrogram(tf.squeeze(audioData, axis=-1)))
+    # prediction = model(get_spectrogram(tf.squeeze(audioData, axis=-1)))
+    # return tf.nn.softmax(prediction[0])
+
+interpretAudio(np.random.rand(44100, 1))
