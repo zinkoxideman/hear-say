@@ -1,10 +1,12 @@
 import numpy as np
 import tensorflow as tf
 import numpy as np
+from pathlib import Path
 
 emotions = ['angry', 'anxious', 'apologetic', 'assertive', 'concerned', 'encouraging', 'excited', 'happy', 'neutral', 'sad']
 
 def get_spectrogram(waveform):
+    print(waveform)
     # # Convert the waveform to a spectrogram via a STFT.
     spectrogram = tf.signal.stft(waveform, frame_length=255, frame_step=128)
     # Obtain the magnitude of the STFT.
@@ -24,13 +26,15 @@ def get_spectrogram(waveform):
 
 
 def interpretAudio(audioData):
-    print("hoi")
+    
 
-    model = tf.keras.models.load_model('C:/Users/20193530/OneDrive - TU Eindhoven/Desktop/New folder (2)/New folder/hear-say/SERVER/model/')
+    model = tf.keras.models.load_model(Path('model'))
 
     # print(model)
-    print(get_spectrogram(tf.squeeze(audioData, axis=-1)))
-    prediction = model(get_spectrogram(tf.squeeze(audioData, axis=-1)))
+    from matplotlib import pyplot as plt
+    im = plt.imshow(get_spectrogram(audioData))
+    plt.show()
+    prediction = model(get_spectrogram(audioData))
     return tf.nn.softmax(prediction[0])
 
-interpretAudio(np.random.rand(44100, 1))
+print(interpretAudio(np.random.uniform(-1, 1, 44100)))
