@@ -1,7 +1,8 @@
 from oocsi import OOCSI
 from machine import ADC, Pin, PWM
-from time import sleep_ms, sleep
+from time import sleep_ms, sleep_us, sleep
 from network import WLAN, STA_IF
+from neopixel import NeoPixel
 
 # connect to the WIFI
 wlan = WLAN(STA_IF) # create station interface
@@ -13,15 +14,13 @@ if not wlan.isconnected():
     wlan.ifconfig()         # get the interface's IP/netmask/gw/DNS addresses
 
 class Light():
-    def __init__(self, pins = [16,17,18]): #set the default pins for the RGB light
-        self.redChannel = Pin(pins[0], Pin.OUT)
-        self.greenChannel = Pin(pins[1], Pin.OUT)
-        self.blueChannel = Pin(pins[2], Pin.OUT)
+    def __init__(self, pin = 18): #set the default pins for the RGB light
+        self.np = NeoPixel(Pin(pin, Pin.OUT), 12)   # create NeoPixel driver on GPIO0 for 12 pixels
 
-    def applyColor(self, color = [0,0,0]):
-        self.redChannel.value(color[0])
-        self.greenChannel.value(color[1])
-        self.blueChannel.value(color[2])
+    def applyColor(self, color):
+        for i in range(12):
+            self.np[i] = (color[0], color[1], color[2])
+        self.np.write()
 
 class Buzzer():
     def __init__(self, pin=15, volume = 256):
@@ -41,36 +40,35 @@ class Buzzer():
         buzzerPin.duty(0)
         buzzerPin.deinit()
 
-    # def startRec(self):
-    # def sent(self):
-    # def confirm(self):
-
 class Microphone():
     def __init__(self, pin = 32):
         self.microphone = ADC(Pin(pin))
+        self.microphone.atten(ADC.ATTN_11DB)
         # adc1_config_width(ADC_WIDTH_BIT_12)
         # adc1_config_channel_atten(ADC1_CHANNEL_7, ADC_ATTEN_DB_11)
     
     #record one chunk of audio from the microphone
-    #we can reliable send about 2000 samples per chunk and still have a reliable connection
+    #we can send about 2000 samples per chunk and still have a reliable connection
     def readChunk(self, chunkSize = 1000):
         audioChunk = []
         for i in range(chunkSize):
-            audioChunk.append(self.microphone.read_u16())
+            audioChunk.append(self.microphone.read())
+            sleep_us(22)
         return audioChunk
 
 class Ldr():
-    def __init__(self, pin = 21):
-        self.pin = Pin(pin, Pin.IN)
+    def __init__(self, pin = 32):
+        self.pin = ADC(Pin(pin, Pin.IN))
         self.status = 0
     
     def checkStatus(self):
+        print(self.pin.read())
         #check if the jar has been lifted up
-        if self.pin.value():
+        if self.pin.read():
             return False
         return True
 
-microphone = Microphone()
+microphone = Microphone(35)
 light = Light()
 buzzer = Buzzer()
 ldr = Ldr()
@@ -81,34 +79,28 @@ oocsi = OOCSI('ThisVeryUniqueHandleAndSuch', 'oocsi.id.tue.nl')
 
 def receiveEvent(sender, recipient, event):
     print('received ', event, ' from ', sender) #print the received message
-    buzzer.play_received()
+    # buzzer.play_received()
+    print(event['color'])
     light.applyColor(event['color'])
 
 oocsi.subscribe('hearSayChannel', receiveEvent)
 
-# keep the program running, can be quit with CTRL-C
 counter = 0
 muted = False
 while True:
-    sleep(5)
-    # if ldr.checkStatus():
-    #     if not muted:
-    #         print("lifted")
-    #         counter+=1
-    #         if counter > 10:
-                # counter = 0
-    #             muted = True
-    counter+=1
-    if counter>2:
-        counter = 0
-        muted = True
-    message = {}
-    message['chunk'] = microphone.readChunk(20)
-    message['flag'] = muted
-    oocsi.send('hearSayServer', message)
-    print('.')
-
-    muted = False
-    # else:
-    #     print(".")
-    #     muted = False
+    if ldr.checkStatus():
+        if not muted:
+            print("lifted")
+            counter+=1
+            if counter>20:
+                counter = 0
+                muted = True
+            message = {}
+            message['chunk'] = microphone.readChunk(1000)
+            message['flag'] = muted
+            oocsi.send('hearSayServer', message)
+            muted = False
+    else:
+        print(".")
+        muted = False
+        sleep(1)
